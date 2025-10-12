@@ -1,0 +1,12 @@
+# Backend Setup - Authentication API
+
+## 📁 Folder: server/
+
+This backend is built with Node.js, Express, MongoDB (Atlas), and JWT.
+
+---
+
+## 📦 Installation
+
+```bash
+npm install
