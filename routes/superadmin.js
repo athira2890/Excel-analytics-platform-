@@ -9,21 +9,15 @@ const router = express.Router();
 
 // ---------------------- Superadmin LOGIN ----------------------
 router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
+  const user = await User.findOne({ email, role: "superadmin" });
+  if (!user) return res.status(404).json({ message: "User not found" });
 
-    const user = await User.findOne({ email, role: "superadmin" });
-    if (!user) return res.status(404).json({ message: "User not found" });
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return res.status(403).json({ message: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(403).json({ message: "Invalid credentials" });
-
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+  res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 });
 
 // ---------------------- Superadmin STATS ----------------------
@@ -69,12 +63,10 @@ router.get("/files", protect, verifySuperadmin, async (req, res) => {
   }
 });
 
-
 // ---------------------- Register a new ADMIN ----------------------
 router.post("/register-admin", protect, verifySuperadmin, async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "Email already registered" });
 
@@ -87,7 +79,8 @@ router.post("/register-admin", protect, verifySuperadmin, async (req, res) => {
     res.status(500).json({ message: "Error creating admin" });
   }
 });
-// GET Superadmin profile
+
+// ---------------------- Superadmin PROFILE ----------------------
 router.get("/profile", protect, verifySuperadmin, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("name email role");
@@ -98,7 +91,6 @@ router.get("/profile", protect, verifySuperadmin, async (req, res) => {
   }
 });
 
-// PUT Superadmin profile update
 router.put("/profile", protect, verifySuperadmin, async (req, res) => {
   try {
     const { name } = req.body;
@@ -114,5 +106,5 @@ router.put("/profile", protect, verifySuperadmin, async (req, res) => {
   }
 });
 
-
+// ✅ Only ONE default export at the bottom
 export default router;
